@@ -8,6 +8,7 @@ from ._document import (
 )
 from ._parser import ImageParser, ParserBase, PDFParser, PPTParser, TextParser
 from ._vdb import (
+    AnalyticDBMySQLStore,
     DocumentSummary,
     VectorStoreBase,
     VectorRecord,
@@ -30,6 +31,7 @@ __all__ = [
     "VectorStoreBase",
     "VectorRecord",
     "VectorSearchResult",
+    "AnalyticDBMySQLStore",
     "QdrantStore",
     "KnowledgeBase",
 ]

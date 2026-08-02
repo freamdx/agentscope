@@ -7,6 +7,7 @@ from ._vector_store import (
     VectorSearchResult,
     VectorStoreBase,
 )
+from ._analyticdb_mysql import AnalyticDBMySQLStore
 from ._qdrant import QdrantStore
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "VectorStoreBase",
     "VectorRecord",
     "VectorSearchResult",
+    "AnalyticDBMySQLStore",
     "QdrantStore",
 ]
