@@ -226,14 +226,89 @@ store = ElasticsearchStore(
   `CollectionPerKbManager(storage=storage, vector_store=store)` and pass it
   to `create_app(knowledge_base_manager=...)`.
 
+### AnalyticDB for MySQL
+
+To use Alibaba Cloud AnalyticDB for MySQL as the vector backend, install the
+`pymysql` extra:
+
+```bash
+uv pip install "agentscope[vdb-analyticdb]"
+# Or from source (repo root)
+uv pip install -e ".[vdb-analyticdb]"
+```
+
+**Prerequisites**
+
+- An AnalyticDB for MySQL cluster whose kernel can create `XUANWU_V2` vector
+  tables: 3.2.7.0 or newer for `distance="COSINE"` (the default), 3.2.6.0 or
+  newer for `distance="EUCLIDEAN"`.
+- Network access to the cluster endpoint, with credentials read from the
+  environment:
+
+```bash
+export ADB_HOST="am-xxx.ads.aliyuncs.com"
+export ADB_USER="rag_user"
+export ADB_PASSWORD="..."
+```
+
+Replace the vector store construction in `index_and_search.py` and/or
+`integrate_with_agent.py`:
+
+```python
+import os
+
+from agentscope.rag import AnalyticDBMySQLStore
+
+store = AnalyticDBMySQLStore(
+    host=os.environ["ADB_HOST"],
+    port=3306,
+    user=os.environ["ADB_USER"],
+    password=os.environ["ADB_PASSWORD"],
+    database="agentscope_rag",
+    # The metric also fixes the ANN index measure.
+    distance="COSINE",
+)
+
+# Same async context-manager and VectorStoreBase contracts as QdrantStore.
+async with store:
+    knowledge = KnowledgeBase(
+        name="demo-kb",
+        description="A toy corpus on cats and AgentScope.",
+        embedding_model=embedding_model,
+        vector_store=store,
+        collection=COLLECTION,
+    )
+    ...
+```
+
+**Notes**
+
+- Each knowledge base maps to one table inside `database`. Collection names
+  and metadata keys are spliced into DDL and `JSON_EXTRACT` paths, so they
+  must match `[A-Za-z0-9_-]` (64 characters at most) or the call raises
+  `ValueError`; filter values are bound as parameters.
+- `CREATE TABLE IF NOT EXISTS` declares the ANN index inline, so re-creating
+  a collection is a no-op.
+- Statements commit as they run (`autocommit=True` by default). Rows are
+  keyed on `document_id` + `chunk_index`, so re-indexing a document replaces
+  its chunks instead of duplicating them.
+- `EUCLIDEAN` scores are the negated `l2_distance`, keeping
+  `VectorSearchResult.score` higher-is-better as in the other backends.
+- `pymysql` is synchronous and not thread-safe: the store holds one
+  connection and pings it before each statement, so keep one store per
+  process and do not share it across threads.
+- For service mode, construct
+  `CollectionPerKbManager(storage=storage, vector_store=store)` and pass it
+  to `create_app(knowledge_base_manager=...)`.
+
 ### Choosing a vector backend
 
-| | Qdrant (default) | Milvus Lite | MongoDB | Elasticsearch |
-| --- | --- | --- | --- | --- |
-| Install extra | `agentscope[vdb-qdrant]` | `agentscope[vdb-milvus]` | `agentscope[vdb-mongodb]` | `agentscope[vdb-elasticsearch]` |
-| External service | No | No | Yes | Yes |
-| Persistence | No (`:memory:`) | Yes (local `.db`) | Yes (server) | Yes (server) |
-| Best for | Quick start / tests | Local dev with persistence | Teams already on MongoDB | Teams already on Elastic or needing distributed kNN search |
+| | Qdrant (default) | Milvus Lite | MongoDB | Elasticsearch | AnalyticDB MySQL |
+| --- | --- | --- | --- | --- | --- |
+| Install extra | `agentscope[vdb-qdrant]` | `agentscope[vdb-milvus]` | `agentscope[vdb-mongodb]` | `agentscope[vdb-elasticsearch]` | `agentscope[vdb-analyticdb]` |
+| External service | No | No | Yes | Yes | Yes |
+| Persistence | No (`:memory:`) | Yes (local `.db`) | Yes (server) | Yes (server) | Yes (server) |
+| Best for | Quick start / tests | Local dev with persistence | Teams already on MongoDB | Teams already on Elastic or needing distributed kNN search | Teams already on AnalyticDB for MySQL |
 
 `integrate_with_agent.py` additionally uses `DashScopeChatModel`, which is already in the base `agentscope` dependencies.
 
