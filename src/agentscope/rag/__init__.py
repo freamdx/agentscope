@@ -16,6 +16,7 @@ from ._parser import (
     ExcelParser,
 )
 from ._vdb import (
+    AnalyticDBMySQLStore,
     DocumentSummary,
     ElasticsearchStore,
     MilvusLiteStore,
@@ -45,6 +46,7 @@ __all__ = [
     "VectorStoreBase",
     "VectorRecord",
     "VectorSearchResult",
+    "AnalyticDBMySQLStore",
     "QdrantStore",
     "KnowledgeBase",
     "MongoDBStore",

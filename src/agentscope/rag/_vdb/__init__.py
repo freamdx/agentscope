@@ -7,6 +7,7 @@ from ._vector_store import (
     VectorSearchResult,
     VectorStoreBase,
 )
+from ._analyticdb_mysql import AnalyticDBMySQLStore
 from ._qdrant import QdrantStore
 from ._mongodb import MongoDBStore
 from ._milvus_lite import MilvusLiteStore
@@ -19,6 +20,7 @@ __all__ = [
     "VectorStoreBase",
     "VectorRecord",
     "VectorSearchResult",
+    "AnalyticDBMySQLStore",
     "QdrantStore",
     "MongoDBStore",
 ]
